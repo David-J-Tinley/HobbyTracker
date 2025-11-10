@@ -6,27 +6,17 @@
 //
 
 import SwiftUI
-import SwiftData
+import SwiftData // 1. Import SwiftData
 
 @main
-struct HobbyTrackerApp: App {
-    var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            Item.self,
-        ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-
-        do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
-        } catch {
-            fatalError("Could not create ModelContainer: \(error)")
-        }
-    }()
-
+struct HobbyTrackerApp: App { // <-- This name will be your project's name
     var body: some Scene {
         WindowGroup {
             ContentView()
         }
-        .modelContainer(sharedModelContainer)
+        // 2. Add this modifier to set up the database
+        // This injects the "modelContext" into the environment
+        // for all other views (like ContentView and AddMiniatureView)
+        .modelContainer(for: Miniature.self)
     }
 }
