@@ -11,6 +11,7 @@ import SwiftData
 struct MiniatureDetailView: View {
     // This view receives one miniature to display
     let miniature: Miniature
+    @State private var isShowingEditSheet = false
 
     var body: some View {
         // We use a List to get the nice grouped iOS styling
@@ -78,6 +79,19 @@ struct MiniatureDetailView: View {
         }
         .navigationTitle(miniature.name) // Set the title to the mini's name
         .navigationBarTitleDisplayMode(.inline) // Use a smaller title
+        // MARK: - Toolbar
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button("Edit") {
+                    isShowingEditSheet = true
+                }
+            }
+        }
+        // MARK: - Edit Sheet
+        .sheet(isPresented: $isShowingEditSheet) {
+            // Present the EditView, passing in the current miniature
+            EditMiniatureView(miniature: miniature)
+        }
     }
     
     // Helper function to color-code the status
