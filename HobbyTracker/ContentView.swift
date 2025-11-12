@@ -53,6 +53,7 @@ struct ContentView: View {
                     } label: {
                         Image(systemName: "plus")
                     }
+                    .accessibilityIdentifier("addMiniatureButton")
                 }
             }
             // 8. The sheet modifier to present the "Add" view
