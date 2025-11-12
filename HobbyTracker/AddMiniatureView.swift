@@ -29,6 +29,7 @@ struct AddMiniatureView: View {
                 // MARK: - Details Section
                 Section("Details") {
                     TextField("Miniature Name", text: $name)
+                        .accessibilityIdentifier("miniatureNameField")
                     TextField("Faction", text: $faction)
                 }
                 
@@ -83,6 +84,7 @@ struct AddMiniatureView: View {
                     }
                     // Disable the save button if the name is empty
                     .disabled(name.isEmpty)
+                    .accessibilityIdentifier("saveMiniatureButton")
                 }
             }
             // MARK: - Photo Loading Logic

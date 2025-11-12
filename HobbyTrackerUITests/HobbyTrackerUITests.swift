@@ -10,27 +10,55 @@ import XCTest
 final class HobbyTrackerUITests: XCTestCase {
 
     override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
-
-        // In UI tests it is usually best to stop immediately when a failure occurs.
         continueAfterFailure = false
-
-        // In UI tests it’s important to set the initial state - such as interface orientation - required for your tests before they run. The setUp method is a good place to do this.
-    }
-
-    override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
     }
 
     @MainActor
-    func testExample() throws {
-        // UI tests must launch the application that they test.
+    func testAddMiniatureFlow() throws {
+        // 1. Launch the application
         let app = XCUIApplication()
-        app.launch()
+        app.launch() // This launch should be fresh for each test
 
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
+        // --- Start of a full user story ---
+        
+        // 2. Tap the "Add" button
+        // (Assumes you added .accessibilityIdentifier("addMiniatureButton") to your + button)
+        let addButton = app.buttons["addMiniatureButton"]
+        XCTAssert(addButton.exists, "The 'Add' button should exist")
+        addButton.tap()
+
+        // 3. Fill out the "Add Miniature" form
+        // (Assumes .accessibilityIdentifier("miniatureNameField"))
+        let nameField = app.textFields["miniatureNameField"]
+        XCTAssert(nameField.exists, "Name text field should exist")
+        nameField.tap()
+        nameField.typeText("Space Marine Hero")
+        
+        // We can find other fields by their placeholder text too
+        let factionField = app.textFields["Faction"]
+        XCTAssert(factionField.exists, "Faction text field should exist")
+        factionField.tap()
+        factionField.typeText("Salamanders")
+        
+        // 4. Tap the "Save" button
+        // (Assumes .accessibilityIdentifier("saveMiniatureButton"))
+        let saveButton = app.buttons["saveMiniatureButton"]
+        XCTAssert(saveButton.exists, "Save button should exist")
+        saveButton.tap()
+        
+        // 5. Verify the new item is on the main list
+        // The sheet should be dismissed, and we should be back on the main screen.
+        // We can check if static text with our new miniature's name exists.
+        let newMiniCell = app.staticTexts["Space Marine Hero"]
+        
+        // We use an expectation to wait for the sheet to close and the list to update
+        let cellExists = newMiniCell.waitForExistence(timeout: 2)
+        XCTAssert(cellExists, "The new miniature cell should exist in the list")
+        
+        // We can also check the faction
+        XCTAssert(app.staticTexts["Salamanders"].exists, "The new miniature's faction should be visible")
     }
-
+    
     @MainActor
     func testLaunchPerformance() throws {
         // This measures how long it takes to launch your application.
