@@ -21,7 +21,7 @@ jobs:
 
       # Install xcbeautify to make logs more readable
       - name: Install xcbeautify
-	run: brew install xcbeautify
+        run: brew install xcbeautify
 
       # Run the tests
       - name: Run Tests
