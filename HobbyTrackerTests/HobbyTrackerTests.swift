@@ -79,4 +79,29 @@ struct HobbyTrackerTests {
         miniatures = try context.fetch(FetchDescriptor<Miniature>())
         #expect(miniatures.isEmpty)
     }
+    @MainActor
+    @Test func testSwiftDataUpdate() async throws {
+        let context = testContainer.mainContext
+        
+        // 1. Setup: Insert a miniature
+        let mini = Miniature(name: "Gretchin", faction: "Goffs", status: .unbuilt)
+        context.insert(mini)
+        
+        // 2. Verify it's saved
+        var miniatures = try context.fetch(FetchDescriptor<Miniature>())
+        #expect(miniatures.first?.name == "Gretchin")
+        #expect(miniatures.first?.status == .unbuilt)
+
+        // 3. UPDATE: Get the object and change its properties
+        let miniToUpdate = miniatures.first!
+        miniToUpdate.name = "Runtherd"
+        miniToUpdate.status = .wip
+        
+        // 4. VERIFY: Fetch again and check the new values
+        // (Fetching again ensures we are reading the latest state from the context)
+        miniatures = try context.fetch(FetchDescriptor<Miniature>())
+        #expect(miniatures.count == 1)
+        #expect(miniatures.first?.name == "Runtherd")
+        #expect(miniatures.first?.status == .wip)
+    }
 }

@@ -66,4 +66,98 @@ final class HobbyTrackerUITests: XCTestCase {
             XCUIApplication().launch()
         }
     }
+    
+    @MainActor
+    func testEditMiniatureFlow() throws {
+        // 1. Setup: Add a miniature to edit first
+        let app = XCUIApplication()
+        app.launch()
+        
+        app.buttons["addMiniatureButton"].tap()
+        
+        let nameField = app.textFields["miniatureNameField"]
+        // Wait for the field if needed (good practice)
+        _ = nameField.waitForExistence(timeout: 2)
+        nameField.tap()
+        nameField.typeText("Ork Boy")
+        
+        let factionField = app.textFields["Faction"]
+        factionField.tap()
+        factionField.typeText("Goffs")
+        
+        app.buttons["saveMiniatureButton"].tap()
+        
+        // 2. Navigate to the detail screen and tap Edit
+        let cell = app.staticTexts["Ork Boy"]
+        // Wait for the save sheet to dismiss and the cell to appear
+        XCTAssert(cell.waitForExistence(timeout: 5), "The new cell should appear in the list")
+        cell.tap()
+        
+        let editButton = app.buttons["editButton"]
+        // CRITICAL FIX: Wait for the navigation push animation to finish
+        XCTAssert(editButton.waitForExistence(timeout: 2), "Edit button should exist after navigation")
+        editButton.tap()
+        
+        // 3. Edit the miniature's name
+        let editNameField = app.textFields["editNameField"]
+        // CRITICAL FIX: Wait for the sheet slide-up animation to finish
+        XCTAssert(editNameField.waitForExistence(timeout: 2), "Edit name field should exist after sheet opens")
+        
+        editNameField.tap()
+//        editNameField.doubleTap()
+//        editNameField.doubleTap()
+        // --- NEW CLEARING LOGIC ---
+        // Instead of tapping to select, we hit "Delete" for every character in the field
+        if let currentValue = editNameField.value as? String {
+            let deleteString = String(repeating: XCUIKeyboardKey.delete.rawValue, count: currentValue.count)
+            editNameField.typeText(deleteString)
+        }
+        // --------------------------
+        editNameField.typeText("Ork Nob")
+        
+        // 4. Save the change
+        let doneButton = app.buttons["doneButton"]
+        XCTAssert(doneButton.exists, "Done button should exist")
+        doneButton.tap()
+        
+        // 5. Verify the change
+        // Wait for the sheet to dismiss and title to update
+        XCTAssert(app.navigationBars["Ork Nob"].waitForExistence(timeout: 2))
+        
+        // Optional: Go back and check the main list
+        app.navigationBars.buttons.firstMatch.tap()
+        XCTAssert(app.staticTexts["Ork Nob"].waitForExistence(timeout: 2))
+    }
+    @MainActor
+    func testDeleteMiniatureFlow() throws {
+        // 1. Setup: Add a miniature to delete
+        let app = XCUIApplication()
+        app.launch()
+        
+        app.buttons["addMiniatureButton"].tap()
+        
+        let nameField = app.textFields["miniatureNameField"]
+        _ = nameField.waitForExistence(timeout: 2)
+        nameField.tap()
+        nameField.typeText("To Be Deleted")
+        
+        app.buttons["saveMiniatureButton"].tap()
+        
+        // 2. Find the cell
+        let cell = app.staticTexts["To Be Deleted"]
+        XCTAssert(cell.waitForExistence(timeout: 5), "The new cell should exist")
+
+        // 3. Swipe left to reveal the Delete button
+        cell.swipeLeft()
+        
+        // 4. Tap the delete button
+        let deleteButton = app.buttons["Delete"]
+        XCTAssert(deleteButton.exists, "Delete button should appear after swipe")
+        deleteButton.tap()
+        
+        // 5. Verify the cell is gone
+        // We wait a moment for the animation to finish
+        let doesNotExist = cell.waitForExistence(timeout: 2) == false
+        XCTAssert(doesNotExist, "The cell should be deleted and no longer exist")
+    }
 }

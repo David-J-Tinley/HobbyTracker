@@ -85,6 +85,7 @@ struct MiniatureDetailView: View {
                 Button("Edit") {
                     isShowingEditSheet = true
                 }
+                .accessibilityIdentifier("editButton")
             }
         }
         // MARK: - Edit Sheet

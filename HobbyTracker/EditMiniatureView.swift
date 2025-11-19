@@ -34,6 +34,7 @@ struct EditMiniatureView: View {
                 Section("Details") {
                     // Here we bind directly to the miniature's properties
                     TextField("Miniature Name", text: $miniature.name)
+                        .accessibilityIdentifier("editNameField")
                     TextField("Faction", text: $miniature.faction)
                 }
                 
@@ -81,6 +82,7 @@ struct EditMiniatureView: View {
                         }
                         dismiss() // Just close the sheet
                     }
+                    .accessibilityIdentifier("doneButton")
                 }
             }
             // MARK: - Photo Loading Logic
