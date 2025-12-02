@@ -160,4 +160,59 @@ final class HobbyTrackerUITests: XCTestCase {
         let doesNotExist = cell.waitForExistence(timeout: 2) == false
         XCTAssert(doesNotExist, "The cell should be deleted and no longer exist")
     }
+    
+    @MainActor
+        func testMoveToGalleryFlow() throws {
+            let app = XCUIApplication()
+            app.launch()
+            
+            // 1. Add a new miniature to the Backlog
+            let addButton = app.buttons["addMiniatureButton"]
+            XCTAssert(addButton.exists)
+            addButton.tap()
+            
+            let nameField = app.textFields["miniatureNameField"]
+            nameField.tap()
+            nameField.typeText("Gallery Candidate")
+            
+            app.buttons["saveMiniatureButton"].tap()
+            
+            // 2. Verify it is on the Backlog tab
+            let cell = app.staticTexts["Gallery Candidate"]
+            XCTAssert(cell.waitForExistence(timeout: 2))
+            
+            // 3. Mark it as "Complete"
+            cell.tap() // Go to details
+            
+            app.buttons["editButton"].tap()
+            
+            // Open the Status Picker using the unique ID
+            // We use .buttons because a menu-style Picker acts like a button
+            let statusPicker = app.buttons["statusPicker"]
+
+            if statusPicker.waitForExistence(timeout: 2) {
+                statusPicker.tap()
+                
+                // Select "Complete" from the menu
+                app.buttons["Complete"].tap()
+            }
+
+            app.buttons["doneButton"].tap()
+            
+            // 4. Navigate back to the list
+            app.navigationBars.buttons.firstMatch.tap()
+            
+            // 5. Verify it is GONE from Backlog
+            // (Wait a moment for UI to update)
+            let cellOnBacklog = app.staticTexts["Gallery Candidate"]
+            XCTAssertFalse(cellOnBacklog.exists, "Miniature should no longer be on the Backlog tab")
+            
+            // 6. Switch to the Gallery Tab (Tab bar button 2)
+            // Tab bars usually have buttons labeled with the tab title
+            app.tabBars.buttons["Gallery"].tap()
+            
+            // 7. Verify it IS in the Gallery
+            let galleryCell = app.staticTexts["Gallery Candidate"]
+            XCTAssert(galleryCell.waitForExistence(timeout: 2), "Miniature should now be in the Gallery")
+        }
 }

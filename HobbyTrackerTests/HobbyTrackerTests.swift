@@ -104,4 +104,38 @@ struct HobbyTrackerTests {
         #expect(miniatures.first?.name == "Runtherd")
         #expect(miniatures.first?.status == .wip)
     }
+    
+    @MainActor
+        @Test func testBacklogAndGalleryFiltering() async throws {
+            let context = testContainer.mainContext
+            
+            // 1. Setup: Create a mix of miniatures
+            let backlogItem1 = Miniature(name: "Soldier A", faction: "Army", status: .unbuilt)
+            let backlogItem2 = Miniature(name: "Soldier B", faction: "Army", status: .wip)
+            let completedItem = Miniature(name: "General", faction: "Army", status: .complete)
+            
+            context.insert(backlogItem1)
+            context.insert(backlogItem2)
+            context.insert(completedItem)
+            
+            // 2. Fetch All (simulating what the View does)
+            let descriptor = FetchDescriptor<Miniature>()
+            let allMiniatures = try context.fetch(descriptor)
+            
+            // 3. Test the "Backlog" Logic
+            // Logic: Status != .complete
+            let backlog = allMiniatures.filter { $0.status != .complete }
+            
+            #expect(backlog.count == 2)
+            #expect(backlog.contains { $0.name == "Soldier A" })
+            #expect(backlog.contains { $0.name == "Soldier B" })
+            #expect(!backlog.contains { $0.name == "General" }) // Should NOT be here
+            
+            // 4. Test the "Gallery" Logic
+            // Logic: Status == .complete
+            let gallery = allMiniatures.filter { $0.status == .complete }
+            
+            #expect(gallery.count == 1)
+            #expect(gallery.first?.name == "General")
+        }
 }

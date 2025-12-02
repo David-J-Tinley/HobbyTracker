@@ -46,6 +46,7 @@ struct EditMiniatureView: View {
                         }
                     }
                     .pickerStyle(.menu) // A nice dropdown style
+                    .accessibilityIdentifier("statusPicker")
                 }
                 
                 // MARK: - Photo Section
