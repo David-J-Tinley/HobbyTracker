@@ -29,6 +29,10 @@ final class Miniature {
      */
     @Attribute(.externalStorage) var photo: Data?
     
+    // We provide default values ("") so SwiftData can auto-migrate existing data
+    var recipe: String = ""
+    var notes: String = ""
+    
     // The initializer (the "constructor") for creating a new miniature
     init(name: String, faction: String, status: Status = .unbuilt) {
         self.id = UUID()

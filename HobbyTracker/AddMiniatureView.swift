@@ -22,6 +22,10 @@ struct AddMiniatureView: View {
     // 3. State for the Photo Picker
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var selectedPhotoData: Data?
+    
+    // 4. State for the Notes and Recipe fields
+    @State private var recipe: String = ""
+    @State private var notes: String = ""
 
     var body: some View {
         NavigationStack {
@@ -63,6 +67,17 @@ struct AddMiniatureView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 10))
                             .frame(maxWidth: .infinity, maxHeight: 200)
                     }
+                }
+
+                // MARK: - Notes & Recipes
+                Section("Paint Recipe") {
+                    TextField("e.g. Base: Macragge Blue...", text: $recipe, axis: .vertical)
+                        .lineLimit(3...6) // Sets a minimum and maximum height
+                }
+
+                Section("Notes") {
+                    TextField("General notes about the build...", text: $notes, axis: .vertical)
+                        .lineLimit(3...6)
                 }
             }
             .navigationTitle("Add New Miniature")
@@ -107,7 +122,11 @@ struct AddMiniatureView: View {
         // 2. Add the photo data if it exists
         newMini.photo = selectedPhotoData
         
-        // 3. Insert it into the SwiftData model context
+        // 3. Save the new fields
+        newMini.recipe = recipe
+        newMini.notes = notes
+        
+        // 4. Insert it into the SwiftData model context
         modelContext.insert(newMini)
         
         // SwiftData will auto-save from here

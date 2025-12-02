@@ -9,25 +9,43 @@ import SwiftUI
 import SwiftData
 
 struct ContentView: View {
-    // MARK: - Properties
-    
-    // 1. Get the SwiftData model context
+    var body: some View {
+        // The TabView creates the bottom navigation bar
+        TabView {
+            // Tab 1: The Backlog
+            BacklogView()
+                .tabItem {
+                    Label("Backlog", systemImage: "list.bullet")
+                }
+            
+            // Tab 2: The Completed Gallery
+            CompletedView()
+                .tabItem {
+                    Label("Gallery", systemImage: "trophy.fill")
+                }
+        }
+    }
+}
+
+// MARK: - Tab 1: Backlog View
+struct BacklogView: View {
     @Environment(\.modelContext) private var modelContext
     
-    // 2. Fetch all miniatures, sorted by date added (newest first)
-    @Query(sort: \Miniature.dateAdded, order: .reverse) private var miniatures: [Miniature]
+    // 1. Fetch ALL miniatures (no filter in the database query)
+    @Query(sort: \Miniature.dateAdded, order: .reverse)
+    private var allMiniatures: [Miniature]
+
+    // 2. Filter them in memory using a computed property
+    var backlogMiniatures: [Miniature] {
+        allMiniatures.filter { $0.status != .complete }
+    }
     
-    // 3. State to control the "Add" sheet
     @State private var isAddingMiniature = false
 
-    // MARK: - Body
-    
     var body: some View {
         NavigationStack {
             List {
-                // 4. Loop over the fetched miniatures
-                ForEach(miniatures) { miniature in
-                    // Wrap the row in a NavigationLink
+                ForEach(backlogMiniatures) { miniature in
                     NavigationLink(destination: MiniatureDetailView(miniature: miniature)) {
                         MiniatureRow(miniature: miniature)
                     }
@@ -35,59 +53,137 @@ struct ContentView: View {
                 .onDelete(perform: deleteMiniatures)
             }
             .navigationTitle("Backlog")
-            // 6. Show a nice message if the list is empty
+            // Show a helpful message if the backlog is empty
             .overlay {
-                if miniatures.isEmpty {
+                if backlogMiniatures.isEmpty {
                     ContentUnavailableView(
-                        "No Miniatures",
-                        systemImage: "paintpalette.fill",
-                        description: Text("Tap the + button to add your first miniature.")
+                        "No Backlog",
+                        systemImage: "tray",
+                        description: Text("You're all caught up! Tap + to add a new project.")
                     )
                 }
             }
-            // 7. Toolbar with the "Add" button
+            // The "Add" button really only belongs on the Backlog
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
-                        isAddingMiniature = true // Show the sheet
+                        isAddingMiniature = true
                     } label: {
                         Image(systemName: "plus")
                     }
                     .accessibilityIdentifier("addMiniatureButton")
                 }
             }
-            // 8. The sheet modifier to present the "Add" view
             .sheet(isPresented: $isAddingMiniature) {
                 AddMiniatureView()
             }
         }
     }
     
-    // MARK: - Functions
-    
-    // 9. Function to handle deleting items
     private func deleteMiniatures(at offsets: IndexSet) {
         for index in offsets {
-            // Find the miniature at that index and delete it
-            let miniature = miniatures[index]
-            modelContext.delete(miniature)
+            modelContext.delete(backlogMiniatures[index])
         }
-        // SwiftData will auto-save the deletion
     }
 }
 
-// MARK: - Miniature Row View
+struct CompletedView: View {
+    @Environment(\.modelContext) private var modelContext
+    
+    // 1. Fetch all items
+    @Query(sort: \Miniature.dateAdded, order: .reverse)
+    private var allMiniatures: [Miniature]
+    
+    // 2. Filter for completed ones
+    var completedMiniatures: [Miniature] {
+        allMiniatures.filter { $0.status == .complete }
+    }
+    
+    // 3. Define a 2-column grid layout
+    let columns = [
+        GridItem(.flexible()),
+        GridItem(.flexible())
+    ]
+    
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                // 4. The Grid
+                LazyVGrid(columns: columns, spacing: 20) {
+                    ForEach(completedMiniatures) { miniature in
+                        NavigationLink(destination: MiniatureDetailView(miniature: miniature)) {
+                            // We use a new "Card" view for the grid
+                            MiniatureGridItem(miniature: miniature)
+                        }
+                        .buttonStyle(.plain) // Removes the default blue link color
+                    }
+                }
+                .padding()
+            }
+            .navigationTitle("Completed")
+            .overlay {
+                if completedMiniatures.isEmpty {
+                    ContentUnavailableView(
+                        "No Completed Models",
+                        systemImage: "trophy",
+                        description: Text("Finish a model to see it displayed here!")
+                    )
+                }
+            }
+        }
+    }
+}
 
-/**
- * This is a sub-view for a single row in the list.
- * Keeping it separate makes your ContentView cleaner.
- */
+// MARK: - New Grid Item Component
+// Add this struct to the bottom of ContentView.swift
+struct MiniatureGridItem: View {
+    let miniature: Miniature
+    
+    var body: some View {
+        VStack {
+            // Large Photo
+            if let photoData = miniature.photo,
+               let uiImage = UIImage(data: photoData) {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 160, height: 160)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .shadow(radius: 4)
+            } else {
+                // Placeholder
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.gray.opacity(0.1))
+                        .frame(width: 160, height: 160)
+                    
+                    Image(systemName: "photo.fill")
+                        .font(.largeTitle)
+                        .foregroundStyle(.gray.opacity(0.5))
+                }
+            }
+            
+            // Name Label
+            Text(miniature.name)
+                .font(.headline)
+                .lineLimit(1)
+                .padding(.top, 4)
+            
+            Text(miniature.faction)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+}
+
+// MARK: - Subviews
+// We keep this shared row view here so both tabs can use it
 struct MiniatureRow: View {
     let miniature: Miniature
     
     var body: some View {
         HStack(spacing: 15) {
-            // MARK: - Photo
+            // Photo
             if let photoData = miniature.photo,
                let uiImage = UIImage(data: photoData) {
                 Image(uiImage: uiImage)
@@ -96,7 +192,6 @@ struct MiniatureRow: View {
                     .frame(width: 50, height: 50)
                     .clipShape(RoundedRectangle(cornerRadius: 8))
             } else {
-                // Placeholder image
                 Image(systemName: "photo.fill")
                     .resizable()
                     .scaledToFit()
@@ -106,7 +201,7 @@ struct MiniatureRow: View {
                     .clipShape(RoundedRectangle(cornerRadius: 8))
             }
             
-            // MARK: - Details
+            // Details
             VStack(alignment: .leading) {
                 Text(miniature.name)
                     .font(.headline)
@@ -117,7 +212,7 @@ struct MiniatureRow: View {
             
             Spacer()
             
-            // MARK: - Status
+            // Status
             Text(miniature.status.displayName)
                 .font(.caption)
                 .padding(6)
@@ -128,26 +223,18 @@ struct MiniatureRow: View {
         .padding(.vertical, 6)
     }
     
-    // Helper function to color-code the status
     private func statusColor(for status: Status) -> Color {
         switch status {
-        case .unbuilt:
-            return .gray
-        case .built:
-            return .brown
-        case .primed:
-            return .black
-        case .wip:
-            return .blue
-        case .complete:
-            return .green
+        case .unbuilt: return .gray
+        case .built: return .brown
+        case .primed: return .black
+        case .wip: return .blue
+        case .complete: return .green
         }
     }
 }
 
-// MARK: - Preview
 #Preview {
     ContentView()
-        // This sets up a temporary in-memory database for the preview
         .modelContainer(for: Miniature.self, inMemory: true)
 }
