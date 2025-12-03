@@ -53,7 +53,7 @@ struct MiniatureDetailView: View {
                     Text(miniature.faction)
                         .foregroundStyle(.secondary)
                 }
-                
+
                 HStack {
                     Text("Status")
                         .font(.headline)
@@ -66,7 +66,7 @@ struct MiniatureDetailView: View {
                         .clipShape(Capsule())
                         .foregroundStyle(.white)
                 }
-                
+
                 HStack {
                     Text("Date Added")
                         .font(.headline)
@@ -76,9 +76,25 @@ struct MiniatureDetailView: View {
                         .foregroundStyle(.secondary)
                 }
             }
+
+            // MARK: - Recipe Section
+            if !miniature.recipe.isEmpty {
+                Section("Paint Recipe") {
+                    Text(miniature.recipe)
+                }
+            }
+
+            // MARK: - Notes Section
+            if !miniature.notes.isEmpty {
+                Section("Notes") {
+                    Text(miniature.notes)
+                }
+            }
         }
+        
         .navigationTitle(miniature.name) // Set the title to the mini's name
         .navigationBarTitleDisplayMode(.inline) // Use a smaller title
+        
         // MARK: - Toolbar
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -88,6 +104,7 @@ struct MiniatureDetailView: View {
                 .accessibilityIdentifier("editButton")
             }
         }
+        
         // MARK: - Edit Sheet
         .sheet(isPresented: $isShowingEditSheet) {
             // Present the EditView, passing in the current miniature

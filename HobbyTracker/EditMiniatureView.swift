@@ -48,7 +48,7 @@ struct EditMiniatureView: View {
                     .pickerStyle(.menu) // A nice dropdown style
                     .accessibilityIdentifier("statusPicker")
                 }
-                
+
                 // MARK: - Photo Section
                 Section("Photo") {
                     PhotosPicker(
@@ -58,7 +58,7 @@ struct EditMiniatureView: View {
                     ) {
                         Label("Change Photo", systemImage: "photo")
                     }
-                    
+
                     // Show a preview of the *new* or *existing* photo
                     if let photoData = selectedPhotoData ?? miniature.photo,
                        let uiImage = UIImage(data: photoData) {
@@ -68,6 +68,17 @@ struct EditMiniatureView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 10))
                             .frame(maxWidth: .infinity, maxHeight: 200)
                     }
+                }
+                // MARK: - Recipe and Notes
+                Section("Paint Recipe") {
+                    // axis: .vertical makes the box grow as you type
+                    TextField("Enter paint recipe...", text: $miniature.recipe, axis: .vertical)
+                        .lineLimit(5...10)
+                }
+
+                Section("Notes") {
+                    TextField("Enter notes...", text: $miniature.notes, axis: .vertical)
+                        .lineLimit(5...10)
                 }
             }
             .navigationTitle("Edit Miniature")

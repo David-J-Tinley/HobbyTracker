@@ -8,6 +8,13 @@
 import SwiftUI
 import SwiftData
 
+enum SortOption: String, CaseIterable {
+    case newest = "Newest"
+    case oldest = "Oldest"
+    case alphabetical = "Name (A-Z)"
+    case faction = "Faction"
+}
+
 struct ContentView: View {
     var body: some View {
         // The TabView creates the bottom navigation bar
@@ -31,16 +38,41 @@ struct ContentView: View {
 struct BacklogView: View {
     @Environment(\.modelContext) private var modelContext
     
-    // 1. Fetch ALL miniatures (no filter in the database query)
-    @Query(sort: \Miniature.dateAdded, order: .reverse)
-    private var allMiniatures: [Miniature]
-
-    // 2. Filter them in memory using a computed property
-    var backlogMiniatures: [Miniature] {
-        allMiniatures.filter { $0.status != .complete }
-    }
+    // 1. Fetch All
+    @Query private var allMiniatures: [Miniature]
     
+    // 2. Search & Sort State
+    @State private var searchText = ""
+    @State private var sortOption: SortOption = .newest
     @State private var isAddingMiniature = false
+
+    // 3. The Power Logic: Filter -> Search -> Sort
+    var backlogMiniatures: [Miniature] {
+        // A. Start with everything that isn't complete
+        var result = allMiniatures.filter { $0.status != .complete }
+        
+        // B. Apply Search (if user typed anything)
+        if !searchText.isEmpty {
+            result = result.filter {
+                $0.name.localizedStandardContains(searchText) ||
+                $0.faction.localizedStandardContains(searchText)
+            }
+        }
+        
+        // C. Apply Sort
+        return result.sorted {
+            switch sortOption {
+            case .newest:
+                return $0.dateAdded > $1.dateAdded
+            case .oldest:
+                return $0.dateAdded < $1.dateAdded
+            case .alphabetical:
+                return $0.name < $1.name
+            case .faction:
+                return $0.faction < $1.faction
+            }
+        }
+    }
 
     var body: some View {
         NavigationStack {
@@ -53,18 +85,33 @@ struct BacklogView: View {
                 .onDelete(perform: deleteMiniatures)
             }
             .navigationTitle("Backlog")
-            // Show a helpful message if the backlog is empty
+            // 4. Add the Search Bar
+            .searchable(text: $searchText, prompt: "Search name or faction...")
             .overlay {
                 if backlogMiniatures.isEmpty {
                     ContentUnavailableView(
-                        "No Backlog",
-                        systemImage: "tray",
-                        description: Text("You're all caught up! Tap + to add a new project.")
+                        searchText.isEmpty ? "No Backlog" : "No Results",
+                        systemImage: searchText.isEmpty ? "tray" : "magnifyingglass",
+                        description: Text(searchText.isEmpty ? "You're all caught up!" : "Check your spelling.")
                     )
                 }
             }
-            // The "Add" button really only belongs on the Backlog
             .toolbar {
+                // 5. Sort Menu (Top Left)
+                ToolbarItem(placement: .topBarLeading) {
+                    Menu {
+                        Picker("Sort By", selection: $sortOption) {
+                            ForEach(SortOption.allCases, id: \.self) { option in
+                                Text(option.rawValue).tag(option)
+                            }
+                        }
+                    } label: {
+                        Image(systemName: "arrow.up.arrow.down.circle")
+                    }
+                    .accessibilityIdentifier("sortMenu")
+                }
+                
+                // Add Button (Top Right)
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         isAddingMiniature = true
@@ -90,43 +137,89 @@ struct BacklogView: View {
 struct CompletedView: View {
     @Environment(\.modelContext) private var modelContext
     
-    // 1. Fetch all items
-    @Query(sort: \Miniature.dateAdded, order: .reverse)
-    private var allMiniatures: [Miniature]
+    @Query private var allMiniatures: [Miniature]
     
-    // 2. Filter for completed ones
+    // State for Search/Sort/Sheet
+    @State private var searchText = ""
+    @State private var sortOption: SortOption = .newest
+    @State private var isShowingStats = false
+    
+    let columns = [GridItem(.flexible()), GridItem(.flexible())]
+    
+    // Computed Property
     var completedMiniatures: [Miniature] {
-        allMiniatures.filter { $0.status == .complete }
+        // A. Filter for Complete
+        var result = allMiniatures.filter { $0.status == .complete }
+        
+        // B. Search
+        if !searchText.isEmpty {
+            result = result.filter {
+                $0.name.localizedStandardContains(searchText) ||
+                $0.faction.localizedStandardContains(searchText)
+            }
+        }
+        
+        // C. Sort
+        return result.sorted {
+            switch sortOption {
+            case .newest: return $0.dateAdded > $1.dateAdded
+            case .oldest: return $0.dateAdded < $1.dateAdded
+            case .alphabetical: return $0.name < $1.name
+            case .faction: return $0.faction < $1.faction
+            }
+        }
     }
-    
-    // 3. Define a 2-column grid layout
-    let columns = [
-        GridItem(.flexible()),
-        GridItem(.flexible())
-    ]
     
     var body: some View {
         NavigationStack {
             ScrollView {
-                // 4. The Grid
                 LazyVGrid(columns: columns, spacing: 20) {
                     ForEach(completedMiniatures) { miniature in
                         NavigationLink(destination: MiniatureDetailView(miniature: miniature)) {
-                            // We use a new "Card" view for the grid
                             MiniatureGridItem(miniature: miniature)
                         }
-                        .buttonStyle(.plain) // Removes the default blue link color
+                        .buttonStyle(.plain)
                     }
                 }
                 .padding()
             }
             .navigationTitle("Completed")
+            // Search Bar
+            .searchable(text: $searchText, prompt: "Search gallery...")
+            .toolbar {
+                // Sort Menu
+                ToolbarItem(placement: .topBarLeading) {
+                    Menu {
+                        Picker("Sort By", selection: $sortOption) {
+                            ForEach(SortOption.allCases, id: \.self) { option in
+                                Text(option.rawValue).tag(option)
+                            }
+                        }
+                    } label: {
+                        Image(systemName: "arrow.up.arrow.down.circle")
+                    }
+                    .accessibilityIdentifier("sortMenu")
+                }
+                
+                // Stats Button
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        isShowingStats = true
+                    } label: {
+                        Image(systemName: "chart.pie.fill")
+                    }
+                    .accessibilityIdentifier("statsButton")
+                }
+            }
+            .sheet(isPresented: $isShowingStats) {
+                StatsView()
+            }
             .overlay {
                 if completedMiniatures.isEmpty {
                     ContentUnavailableView(
-                        "No Completed Models",
-                        systemImage: "trophy",
-                        description: Text("Finish a model to see it displayed here!")
+                        searchText.isEmpty ? "No Completed Models" : "No Results",
+                        systemImage: searchText.isEmpty ? "trophy" : "magnifyingglass",
+                        description: Text(searchText.isEmpty ? "Finish a model to see it here!" : "Try a different search.")
                     )
                 }
             }

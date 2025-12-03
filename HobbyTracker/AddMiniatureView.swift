@@ -73,11 +73,13 @@ struct AddMiniatureView: View {
                 Section("Paint Recipe") {
                     TextField("e.g. Base: Macragge Blue...", text: $recipe, axis: .vertical)
                         .lineLimit(3...6) // Sets a minimum and maximum height
+                        .accessibilityIdentifier("recipeField")
                 }
 
                 Section("Notes") {
                     TextField("General notes about the build...", text: $notes, axis: .vertical)
                         .lineLimit(3...6)
+                        .accessibilityIdentifier("notesField")
                 }
             }
             .navigationTitle("Add New Miniature")

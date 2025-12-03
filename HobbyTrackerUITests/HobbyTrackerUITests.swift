@@ -128,6 +128,7 @@ final class HobbyTrackerUITests: XCTestCase {
         app.navigationBars.buttons.firstMatch.tap()
         XCTAssert(app.staticTexts["Ork Nob"].waitForExistence(timeout: 2))
     }
+    
     @MainActor
     func testDeleteMiniatureFlow() throws {
         // 1. Setup: Add a miniature to delete
@@ -214,5 +215,138 @@ final class HobbyTrackerUITests: XCTestCase {
             // 7. Verify it IS in the Gallery
             let galleryCell = app.staticTexts["Gallery Candidate"]
             XCTAssert(galleryCell.waitForExistence(timeout: 2), "Miniature should now be in the Gallery")
+        }
+    
+    @MainActor
+        func testAddMiniatureWithNotes() throws {
+            let app = XCUIApplication()
+            app.launch()
+            
+            // 1. Open the "Add" sheet
+            app.buttons["addMiniatureButton"].tap()
+            
+            // 2. Fill in basic info
+            let nameField = app.textFields["miniatureNameField"]
+            nameField.tap()
+            nameField.typeText("Recipe Tester")
+            
+            // 3. Fill in the new Recipe field
+            // Note: TextFields with vertical axis sometimes act like TextViews,
+            // but .textFields["id"] usually finds them in SwiftUI.
+            let recipeField = app.textFields["recipeField"]
+            XCTAssert(recipeField.exists, "Recipe field should exist")
+            recipeField.tap()
+            recipeField.typeText("Base: Leadbelcher")
+            
+            // 4. Fill in the new Notes field
+            let notesField = app.textFields["notesField"]
+            XCTAssert(notesField.exists, "Notes field should exist")
+            notesField.tap()
+            notesField.typeText("Watch out for mold lines")
+            
+            // 5. Save
+            app.buttons["saveMiniatureButton"].tap()
+            
+            // 6. Verify data in Detail View
+            // Wait for list to update
+            let cell = app.staticTexts["Recipe Tester"]
+            XCTAssert(cell.waitForExistence(timeout: 2))
+            cell.tap()
+            
+            // Check that the headers and text exist
+            XCTAssert(app.staticTexts["Paint Recipe"].exists)
+            XCTAssert(app.staticTexts["Base: Leadbelcher"].exists)
+            
+            XCTAssert(app.staticTexts["Notes"].exists)
+            XCTAssert(app.staticTexts["Watch out for mold lines"].exists)
+        }
+    
+    @MainActor
+        func testStatsSheetFlow() throws {
+            let app = XCUIApplication()
+            app.launch()
+            
+            // 1. Navigate to the Gallery (Completed) Tab
+            // Note: Tab bars usually use the title of the tab as the button name
+            let galleryTab = app.tabBars.buttons["Gallery"]
+            XCTAssert(galleryTab.exists, "Gallery tab should exist")
+            galleryTab.tap()
+            
+            // 2. Tap the Stats Button
+            let statsButton = app.buttons["statsButton"]
+            XCTAssert(statsButton.exists, "Stats button should be visible in Gallery")
+            statsButton.tap()
+            
+            // 3. Verify the Sheet Opened
+            // We look for the title "Hobby Stats"
+            let sheetTitle = app.staticTexts["Hobby Stats"]
+            XCTAssert(sheetTitle.waitForExistence(timeout: 2), "Stats sheet should appear")
+            
+            // 4. Check for Chart Headers
+            // This ensures our two main sections are actually rendering
+            XCTAssert(app.staticTexts["Project Status"].exists)
+            XCTAssert(app.staticTexts["Faction Breakdown"].exists)
+            
+            // 5. Dismiss the sheet
+            app.buttons["Done"].tap()
+            
+            // 6. Verify we are back on the Gallery
+            XCTAssert(statsButton.exists)
+        }
+    
+    @MainActor
+        func testSearchAndSortUI() throws {
+            let app = XCUIApplication()
+            app.launch()
+            
+            // 1. Add "Zebra" (Added First)
+            app.buttons["addMiniatureButton"].tap()
+            app.textFields["miniatureNameField"].tap()
+            app.textFields["miniatureNameField"].typeText("Zebra")
+            app.buttons["saveMiniatureButton"].tap()
+            
+            // 2. Add "Apple" (Added Second)
+            app.buttons["addMiniatureButton"].tap()
+            app.textFields["miniatureNameField"].tap()
+            app.textFields["miniatureNameField"].typeText("Apple")
+            app.buttons["saveMiniatureButton"].tap()
+            
+            // 3. TEST SEARCH
+            // Tap the search bar
+            let searchField = app.searchFields.firstMatch
+            XCTAssert(searchField.waitForExistence(timeout: 2), "Search bar should exist")
+            searchField.tap()
+            
+            // Search for "Zebra"
+            searchField.typeText("Zebra")
+            
+            // Check results
+            XCTAssert(app.staticTexts["Zebra"].exists)
+            XCTAssertFalse(app.staticTexts["Apple"].exists, "Apple should be filtered out")
+            
+            let clearButton = searchField.buttons["Clear text"]
+            if clearButton.exists {
+                clearButton.tap()
+            }
+            
+            app.buttons["Close"].tap()
+            
+            // 4. TEST SORT
+            // Open Sort Menu
+            let sortMenu = app.buttons["sortMenu"]
+            // Wait up to 2 seconds for the animation to finish
+            XCTAssert(sortMenu.waitForExistence(timeout: 2), "Sort menu should be visible after closing search")
+            sortMenu.tap()
+            
+            // Select "Name (A-Z)"
+            // Note: The menu button text matches the Enum rawValue
+            app.buttons["Name (A-Z)"].tap()
+            
+            // Verify Order
+            // In accessibility trees, the first cell usually appears first in the query match
+            let firstCell = app.cells.firstMatch
+            let firstText = firstCell.staticTexts["Apple"]
+            
+            XCTAssert(firstText.exists, "Apple should be first when sorted alphabetically")
         }
 }
