@@ -7,6 +7,7 @@
 
 import Testing
 import SwiftData
+import Foundation
 @testable import HobbyTracker // Gives your tests access to your app's code
 
 struct HobbyTrackerTests {
@@ -41,7 +42,7 @@ struct HobbyTrackerTests {
         #expect(Status.unbuilt.displayName == "Unbuilt")
     }
 
-    @MainActor // <-- ADD THIS LINE
+    @MainActor
     @Test func testSwiftDataCreateAndRead() async throws {
         // Get the main context from your test container
         let context = testContainer.mainContext
@@ -60,7 +61,7 @@ struct HobbyTrackerTests {
         #expect(miniatures.first?.name == "Librarian")
     }
     
-    @MainActor // <-- ADD THIS LINE
+    @MainActor
     @Test func testSwiftDataDelete() async throws {
         let context = testContainer.mainContext
         
@@ -79,6 +80,7 @@ struct HobbyTrackerTests {
         miniatures = try context.fetch(FetchDescriptor<Miniature>())
         #expect(miniatures.isEmpty)
     }
+    
     @MainActor
     @Test func testSwiftDataUpdate() async throws {
         let context = testContainer.mainContext
@@ -137,5 +139,144 @@ struct HobbyTrackerTests {
             
             #expect(gallery.count == 1)
             #expect(gallery.first?.name == "General")
+        }
+    
+    @MainActor
+        @Test func testRecipeAndNotesPersistence() async throws {
+            // 1. Create a mini (uses the new default "" values)
+            let mini = Miniature(name: "Test Captain", faction: "Ultramarines")
+            
+            #expect(mini.recipe == "")
+            #expect(mini.notes == "")
+            
+            // 2. Add some data
+            mini.recipe = "Base: Macragge Blue, Shade: Nuln Oil"
+            mini.notes = "Used a 32mm base instead of 40mm."
+            
+            // 3. Save it to the context
+            let context = testContainer.mainContext
+            context.insert(mini)
+            
+            // 4. Fetch it back to ensure it saved
+            // Add <Miniature> after #Predicate
+            let descriptor = FetchDescriptor<Miniature>(predicate: #Predicate<Miniature> { $0.name == "Test Captain" })
+            let fetchedMini = try context.fetch(descriptor).first!
+            
+            #expect(fetchedMini.recipe == "Base: Macragge Blue, Shade: Nuln Oil")
+            #expect(fetchedMini.notes == "Used a 32mm base instead of 40mm.")
+        }
+    
+    @MainActor
+        @Test func testStatsCalculations() async throws {
+            let context = testContainer.mainContext
+            
+            // 1. Setup: Create a diverse collection
+            // 2 Ultramarines (1 Built, 1 Wip)
+            context.insert(Miniature(name: "Intercessor", faction: "Ultramarines", status: .built))
+            context.insert(Miniature(name: "Captain", faction: "Ultramarines", status: .wip))
+            
+            // 1 Necron (Unbuilt)
+            context.insert(Miniature(name: "Warrior", faction: "Necrons", status: .unbuilt))
+            
+            // 3 Orks (All Complete)
+            context.insert(Miniature(name: "Boy 1", faction: "Orks", status: .complete))
+            context.insert(Miniature(name: "Boy 2", faction: "Orks", status: .complete))
+            context.insert(Miniature(name: "Nob", faction: "Orks", status: .complete))
+            
+            // 2. Fetch all data
+            let descriptor = FetchDescriptor<Miniature>()
+            let minis = try context.fetch(descriptor)
+            
+            // 3. Test Status Counts (The "Donut Chart" Logic)
+            let completedCount = minis.filter { $0.status == .complete }.count
+            let builtCount = minis.filter { $0.status == .built }.count
+            let unbuiltCount = minis.filter { $0.status == .unbuilt }.count
+            
+            #expect(completedCount == 3) // Should be 3 Orks
+            #expect(builtCount == 1)     // Should be 1 Marine
+            #expect(unbuiltCount == 1)   // Should be 1 Necron
+            
+            // 4. Test Faction Grouping (The "Bar Chart" Logic)
+            let allFactions = Set(minis.map { $0.faction })
+            
+            // Calculate counts per faction
+            let factionCounts = allFactions.map { faction in
+                minis.filter { $0.faction == faction }.count
+            }
+            
+            #expect(factionCounts.contains(3)) // Orks
+            #expect(factionCounts.contains(2)) // Ultramarines
+            #expect(factionCounts.contains(1)) // Necrons
+        }
+    
+    @MainActor
+        @Test func testSearchAndSortLogic() async throws {
+            // 1. Setup: Create items with distinct names and dates
+            let oldMini = Miniature(name: "Alpha Squad", faction: "Marines")
+            oldMini.dateAdded = Date.distantPast // Force it to be "Old"
+            
+            let newMini = Miniature(name: "Zulu Squad", faction: "Zerg")
+            newMini.dateAdded = Date.now // Force it to be "New"
+            
+            // 2. Put them in a list
+            let minis = [oldMini, newMini]
+            
+            // 3. Test SEARCH Logic
+            // Search for "Zulu" -> Should only find newMini
+            let searchResult = minis.filter {
+                $0.name.localizedStandardContains("Zulu")
+            }
+            #expect(searchResult.count == 1)
+            #expect(searchResult.first?.name == "Zulu Squad")
+            
+            // Search for "Squad" -> Should find both
+            let commonResult = minis.filter {
+                $0.name.localizedStandardContains("Squad")
+            }
+            #expect(commonResult.count == 2)
+            
+            // 4. Test SORT Logic
+            
+            // Sort by Alphabetical (A -> Z)
+            let alphaSorted = minis.sorted { $0.name < $1.name }
+            #expect(alphaSorted.first?.name == "Alpha Squad")
+            #expect(alphaSorted.last?.name == "Zulu Squad")
+            
+            // Sort by Newest First (Date Descending)
+            let newestSorted = minis.sorted { $0.dateAdded > $1.dateAdded }
+            #expect(newestSorted.first?.name == "Zulu Squad")
+            #expect(newestSorted.last?.name == "Alpha Squad")
+        }
+    
+    @MainActor
+        @Test func testMiniatureCloning() async throws {
+            // 1. Setup: Create a "Master" miniature with ALL fields filled
+            let master = Miniature(name: "Clone Sergeant", faction: "Republic", status: .built)
+            
+            // Add complex data
+            master.recipe = "Armor: White, Visor: Black"
+            master.notes = "Do not forget the rank markings."
+            
+            // Simulate a photo (using some raw data bytes)
+            let dummyPhotoData = Data([0x00, 0x01, 0x02, 0x03])
+            master.photo = dummyPhotoData
+            
+            // 2. Perform the Clone
+            let clone = master.clone()
+            
+            // 3. Verify Equality (The "Copy" worked)
+            #expect(clone.name == master.name)
+            #expect(clone.faction == master.faction)
+            #expect(clone.status == master.status)
+            #expect(clone.recipe == master.recipe)
+            #expect(clone.notes == master.notes)
+            #expect(clone.photo == master.photo)
+            
+            // 4. Verify Identity (It is a NEW object)
+            #expect(clone.id != master.id) // IDs must be different
+            
+            // Dates should be very close, but technically different objects
+            // (We just check that the clone has a date)
+            #expect(clone.dateAdded != Date.distantPast)
         }
 }

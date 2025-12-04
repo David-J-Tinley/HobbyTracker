@@ -22,6 +22,7 @@ struct AddMiniatureView: View {
     // 3. State for the Photo Picker
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var selectedPhotoData: Data?
+    @State private var isShowingCamera = false
     
     // 4. State for the Notes and Recipe fields
     @State private var recipe: String = ""
@@ -49,23 +50,66 @@ struct AddMiniatureView: View {
                 
                 // MARK: - Photo Section
                 Section("Photo") {
-                    // The new SwiftUI PhotosPicker
-                    PhotosPicker(
-                        selection: $selectedPhotoItem,
-                        matching: .images, // Only allow images
-                        photoLibrary: .shared()
-                    ) {
-                        Label("Add Photo", systemImage: "photo")
-                    }
-                    
-                    // Show a preview if a photo was selected
+                    // If we already have a photo, show it with a "Remove" button
                     if let selectedPhotoData,
-                       let uiImage = UIImage(data: selectedPhotoData) {
+                        let uiImage = UIImage(data: selectedPhotoData) {
+                        
                         Image(uiImage: uiImage)
                             .resizable()
                             .scaledToFit()
                             .clipShape(RoundedRectangle(cornerRadius: 10))
-                            .frame(maxWidth: .infinity, maxHeight: 200)
+                            .frame(maxWidth: .infinity, maxHeight: 300)
+                        
+                        Button("Remove Photo", role: .destructive) {
+                            self.selectedPhotoData = nil
+                            self.selectedPhotoItem = nil
+                        }
+                        .frame(maxWidth: .infinity)
+                        
+                    } else {
+                        // No photo yet? Show the two choices.
+                        HStack(spacing: 20) {
+                            // Button 1: Camera
+                            Button {
+                                isShowingCamera = true
+                            } label: {
+                                VStack {
+                                    Image(systemName: "camera.fill")
+                                        .font(.largeTitle)
+                                        .padding(.bottom, 4)
+                                    Text("Camera")
+                                        .font(.caption)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color.gray.opacity(0.1))
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                            }
+                            // Important: Disable camera if running on Simulator
+                            .disabled(!UIImagePickerController.isSourceTypeAvailable(.camera))
+                            .buttonStyle(.plain)
+
+                            // Button 2: Library
+                            PhotosPicker(
+                                selection: $selectedPhotoItem,
+                                matching: .images,
+                                photoLibrary: .shared()
+                            ) {
+                                VStack {
+                                    Image(systemName: "photo.on.rectangle")
+                                        .font(.largeTitle)
+                                        .padding(.bottom, 4)
+                                    Text("Library")
+                                        .font(.caption)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color.gray.opacity(0.1))
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        .padding(.vertical, 10)
                     }
                 }
 
@@ -73,11 +117,13 @@ struct AddMiniatureView: View {
                 Section("Paint Recipe") {
                     TextField("e.g. Base: Macragge Blue...", text: $recipe, axis: .vertical)
                         .lineLimit(3...6) // Sets a minimum and maximum height
+                        .accessibilityIdentifier("recipeField")
                 }
 
                 Section("Notes") {
                     TextField("General notes about the build...", text: $notes, axis: .vertical)
                         .lineLimit(3...6)
+                        .accessibilityIdentifier("notesField")
                 }
             }
             .navigationTitle("Add New Miniature")
@@ -101,6 +147,9 @@ struct AddMiniatureView: View {
                     .disabled(name.isEmpty)
                     .accessibilityIdentifier("saveMiniatureButton")
                 }
+            }
+            .sheet(isPresented: $isShowingCamera) {
+                CameraPicker(selectedData: $selectedPhotoData)
             }
             // MARK: - Photo Loading Logic
             .onChange(of: selectedPhotoItem) {
