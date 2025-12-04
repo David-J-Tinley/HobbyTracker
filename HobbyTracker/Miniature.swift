@@ -42,6 +42,27 @@ final class Miniature {
         self.dateAdded = Date()
         self.photo = nil // Default to no photo
     }
+    
+    // In Miniature.swift, add this method inside the class:
+
+    func clone() -> Miniature {
+        // 1. Initialize with the same basic properties
+        let newMini = Miniature(
+            name: self.name,
+            faction: self.faction,
+            status: self.status
+        )
+        
+        // 2. Copy the optional/complex data
+        newMini.photo = self.photo
+        newMini.recipe = self.recipe
+        newMini.notes = self.notes
+        
+        // Note: We intentionally do NOT copy 'id' or 'dateAdded'
+        // because this is a new, unique entry.
+        
+        return newMini
+    }
 }
 
 /**

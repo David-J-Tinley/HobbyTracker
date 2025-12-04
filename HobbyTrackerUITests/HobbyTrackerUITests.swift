@@ -93,9 +93,16 @@ final class HobbyTrackerUITests: XCTestCase {
         XCTAssert(cell.waitForExistence(timeout: 5), "The new cell should appear in the list")
         cell.tap()
         
+        // Navigate to detail screen...
+        cell.tap()
+        // FIX: Open the menu first!
+        let actionsMenu = app.buttons["actionsMenu"]
+        XCTAssert(actionsMenu.waitForExistence(timeout: 2), "Actions menu should exist")
+        actionsMenu.tap()
+        
+        // Now find the edit button
         let editButton = app.buttons["editButton"]
-        // CRITICAL FIX: Wait for the navigation push animation to finish
-        XCTAssert(editButton.waitForExistence(timeout: 2), "Edit button should exist after navigation")
+        XCTAssert(editButton.waitForExistence(timeout: 2), "Edit button should exist inside the menu")
         editButton.tap()
         
         // 3. Edit the miniature's name
@@ -185,7 +192,15 @@ final class HobbyTrackerUITests: XCTestCase {
             // 3. Mark it as "Complete"
             cell.tap() // Go to details
             
-            app.buttons["editButton"].tap()
+            // Tap the new "Actions Menu" (the ellipsis icon)
+            let actionsMenu = app.buttons["actionsMenu"]
+            XCTAssert(actionsMenu.waitForExistence(timeout: 2), "The Actions Menu (...) needs to be visible")
+            actionsMenu.tap()
+            
+            // NOW tap the Edit button (which is visible inside the open menu)
+            let editButton = app.buttons["editButton"]
+            XCTAssert(editButton.waitForExistence(timeout: 2), "Edit button should appear inside the menu")
+            editButton.tap()
             
             // Open the Status Picker using the unique ID
             // We use .buttons because a menu-style Picker acts like a button

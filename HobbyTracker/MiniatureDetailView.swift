@@ -9,12 +9,14 @@ import SwiftUI
 import SwiftData
 
 struct MiniatureDetailView: View {
-    // This view receives one miniature to display
+    // 1. We need the context to insert the clone
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
+    
     let miniature: Miniature
     @State private var isShowingEditSheet = false
 
     var body: some View {
-        // We use a List to get the nice grouped iOS styling
         List {
             // MARK: - Photo Section
             Section {
@@ -27,7 +29,6 @@ struct MiniatureDetailView: View {
                         .frame(maxWidth: .infinity)
                         .listRowInsets(EdgeInsets(top: 10, leading: 0, bottom: 10, trailing: 0))
                 } else {
-                    // Placeholder if no photo
                     ZStack {
                         RoundedRectangle(cornerRadius: 12)
                             .fill(Color.gray.opacity(0.1))
@@ -45,7 +46,6 @@ struct MiniatureDetailView: View {
             
             // MARK: - Details Section
             Section("Details") {
-                // Using HStacks for a "Label: Value" style
                 HStack {
                     Text("Faction")
                         .font(.headline)
@@ -53,12 +53,11 @@ struct MiniatureDetailView: View {
                     Text(miniature.faction)
                         .foregroundStyle(.secondary)
                 }
-
+                
                 HStack {
                     Text("Status")
                         .font(.headline)
                     Spacer()
-                    // Re-using the colored status capsule
                     Text(miniature.status.displayName)
                         .font(.caption)
                         .padding(6)
@@ -66,67 +65,88 @@ struct MiniatureDetailView: View {
                         .clipShape(Capsule())
                         .foregroundStyle(.white)
                 }
-
+                
                 HStack {
                     Text("Date Added")
                         .font(.headline)
                     Spacer()
-                    // Format the date to be more readable
                     Text(miniature.dateAdded, style: .date)
                         .foregroundStyle(.secondary)
                 }
             }
-
-            // MARK: - Recipe Section
+            
+            // MARK: - Recipe & Notes
             if !miniature.recipe.isEmpty {
                 Section("Paint Recipe") {
                     Text(miniature.recipe)
                 }
             }
-
-            // MARK: - Notes Section
+            
             if !miniature.notes.isEmpty {
                 Section("Notes") {
                     Text(miniature.notes)
                 }
             }
         }
-        
-        .navigationTitle(miniature.name) // Set the title to the mini's name
-        .navigationBarTitleDisplayMode(.inline) // Use a smaller title
-        
-        // MARK: - Toolbar
+        .navigationTitle(miniature.name)
+        .navigationBarTitleDisplayMode(.inline)
+        // MARK: - Action Menu
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button("Edit") {
-                    isShowingEditSheet = true
+                Menu {
+                    // Button 1: Edit
+                    Button {
+                        isShowingEditSheet = true
+                    } label: {
+                        Label("Edit", systemImage: "pencil")
+                    }
+                    .accessibilityIdentifier("editButton")
+                    
+                    // Button 2: Duplicate
+                    Button {
+                        duplicateMiniature()
+                    } label: {
+                        Label("Duplicate", systemImage: "plus.square.on.square")
+                    }
+                    .accessibilityIdentifier("duplicateButton")
+                    
+                } label: {
+                    // The icon for the menu
+                    Image(systemName: "ellipsis.circle")
                 }
-                .accessibilityIdentifier("editButton")
+                .accessibilityIdentifier("actionsMenu")
             }
         }
-        
-        // MARK: - Edit Sheet
         .sheet(isPresented: $isShowingEditSheet) {
-            // Present the EditView, passing in the current miniature
             EditMiniatureView(miniature: miniature)
         }
     }
     
-    // Helper function to color-code the status
-    // (We need this here too, just like in MiniatureRow)
+    // MARK: - Logic Functions
+
+    private func duplicateMiniature() {
+        // Use the new model method
+        let newMini = miniature.clone()
+        
+        // Save and dismiss
+        modelContext.insert(newMini)
+        dismiss()
+    }
+
     private func statusColor(for status: Status) -> Color {
         switch status {
-        case .unbuilt:
-            return .gray
-        case .built:
-            return .brown
-        case .primed:
-            return .black
-        case .wip:
-            return .blue
-        case .complete:
-            return .green
+        case .unbuilt: return .gray
+        case .built: return .brown
+        case .primed: return .black
+        case .wip: return .blue
+        case .complete: return .green
         }
+    }
+}
+
+#Preview {
+    NavigationStack {
+        MiniatureDetailView(miniature: Miniature(name: "Clone Trooper", faction: "Republic"))
     }
 }
 

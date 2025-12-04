@@ -247,4 +247,36 @@ struct HobbyTrackerTests {
             #expect(newestSorted.first?.name == "Zulu Squad")
             #expect(newestSorted.last?.name == "Alpha Squad")
         }
+    
+    @MainActor
+        @Test func testMiniatureCloning() async throws {
+            // 1. Setup: Create a "Master" miniature with ALL fields filled
+            let master = Miniature(name: "Clone Sergeant", faction: "Republic", status: .built)
+            
+            // Add complex data
+            master.recipe = "Armor: White, Visor: Black"
+            master.notes = "Do not forget the rank markings."
+            
+            // Simulate a photo (using some raw data bytes)
+            let dummyPhotoData = Data([0x00, 0x01, 0x02, 0x03])
+            master.photo = dummyPhotoData
+            
+            // 2. Perform the Clone
+            let clone = master.clone()
+            
+            // 3. Verify Equality (The "Copy" worked)
+            #expect(clone.name == master.name)
+            #expect(clone.faction == master.faction)
+            #expect(clone.status == master.status)
+            #expect(clone.recipe == master.recipe)
+            #expect(clone.notes == master.notes)
+            #expect(clone.photo == master.photo)
+            
+            // 4. Verify Identity (It is a NEW object)
+            #expect(clone.id != master.id) // IDs must be different
+            
+            // Dates should be very close, but technically different objects
+            // (We just check that the clone has a date)
+            #expect(clone.dateAdded != Date.distantPast)
+        }
 }
