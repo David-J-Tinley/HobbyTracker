@@ -15,6 +15,7 @@ struct MiniatureDetailView: View {
     
     let miniature: Miniature
     @State private var isShowingEditSheet = false
+    @State private var isShowingFullScreenImage = false
 
     var body: some View {
         List {
@@ -28,6 +29,16 @@ struct MiniatureDetailView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                         .frame(maxWidth: .infinity)
                         .listRowInsets(EdgeInsets(top: 10, leading: 0, bottom: 10, trailing: 0))
+                        .onTapGesture {
+                            isShowingFullScreenImage = true
+                        }
+                        .overlay(alignment: .bottomTrailing) {
+                            Image(systemName: "plus.magnifyingglass")
+                                .padding(8)
+                                .foregroundStyle(.white)
+                                .background(.black.opacity(0.6))
+                                .clipShape(Circle())
+                        }
                 } else {
                     ZStack {
                         RoundedRectangle(cornerRadius: 12)
@@ -119,6 +130,12 @@ struct MiniatureDetailView: View {
         }
         .sheet(isPresented: $isShowingEditSheet) {
             EditMiniatureView(miniature: miniature)
+        }
+        .fullScreenCover(isPresented: $isShowingFullScreenImage) {
+            if let photoData = miniature.photo,
+               let uiImage = UIImage(data: photoData) {
+                FullScreenImageView(image: uiImage)
+            }
         }
     }
     

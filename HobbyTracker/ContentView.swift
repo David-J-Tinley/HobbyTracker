@@ -134,6 +134,7 @@ struct BacklogView: View {
     }
 }
 
+// MARK: - Completed View
 struct CompletedView: View {
     @Environment(\.modelContext) private var modelContext
     

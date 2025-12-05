@@ -8,6 +8,7 @@
 import Foundation
 import SwiftData
 
+// MARK: - Miniature Class
 /**
  * This is your main data model.
  * The @Model macro tells SwiftData to manage this class in the database.
@@ -43,8 +44,7 @@ final class Miniature {
         self.photo = nil // Default to no photo
     }
     
-    // In Miniature.swift, add this method inside the class:
-
+    // MARK: - Clone Function
     func clone() -> Miniature {
         // 1. Initialize with the same basic properties
         let newMini = Miniature(
@@ -65,6 +65,7 @@ final class Miniature {
     }
 }
 
+// MARK: - Status Enum
 /**
  * This enum defines the specific painting statuses a model can have.
  * - String: Lets us store the value as a readable string.

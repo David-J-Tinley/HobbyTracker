@@ -67,7 +67,7 @@ struct AddMiniatureView: View {
                         .frame(maxWidth: .infinity)
                         
                     } else {
-                        // No photo yet? Show the two choices.
+                        // If no photo, Show the two choices.
                         HStack(spacing: 20) {
                             // Button 1: Camera
                             Button {
