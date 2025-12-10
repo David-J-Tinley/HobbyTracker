@@ -15,31 +15,45 @@ struct MiniatureDetailView: View {
     
     let miniature: Miniature
     @State private var isShowingEditSheet = false
+    
+    // --- CHANGED: Track the specific photo object instead of just a boolean ---
+    // This allows us to know exactly WHICH photo was tapped in the gallery.
+    @State private var selectedPhoto: MiniaturePhoto?
 
     var body: some View {
         List {
-            // MARK: - Photo Section
+            // MARK: - Photo Gallery Section
             Section {
-                if let photoData = miniature.photo,
-                   let uiImage = UIImage(data: photoData) {
-                    Image(uiImage: uiImage)
-                        .resizable()
-                        .scaledToFit()
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                        .frame(maxWidth: .infinity)
-                        .listRowInsets(EdgeInsets(top: 10, leading: 0, bottom: 10, trailing: 0))
-                } else {
+                if miniature.photos.isEmpty {
+                    // Placeholder
                     ZStack {
                         RoundedRectangle(cornerRadius: 12)
                             .fill(Color.gray.opacity(0.1))
                             .frame(height: 250)
-                        
                         Image(systemName: "photo.fill")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 100, height: 100)
+                            .font(.largeTitle)
                             .foregroundStyle(.gray.opacity(0.5))
                     }
+                } else {
+                    // Horizontal TabView for Gallery
+                    TabView {
+                        // Sort photos by date so we see the progression
+                        ForEach(miniature.photos.sorted(by: { $0.dateTaken < $1.dateTaken })) { photo in
+                            if let uiImage = UIImage(data: photo.data) {
+                                Image(uiImage: uiImage)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .tag(photo.id)
+                                    // --- UPDATED TAP LOGIC ---
+                                    .onTapGesture {
+                                        // Update your full screen logic to use the specific 'photo' tapped
+                                        selectedPhoto = photo
+                                    }
+                            }
+                        }
+                    }
+                    .tabViewStyle(.page) // Gives us the little dots at the bottom
+                    .frame(height: 300)
                     .listRowInsets(EdgeInsets(top: 10, leading: 0, bottom: 10, trailing: 0))
                 }
             }
@@ -120,6 +134,16 @@ struct MiniatureDetailView: View {
         .sheet(isPresented: $isShowingEditSheet) {
             EditMiniatureView(miniature: miniature)
         }
+        // --- CHANGED: Use the 'item' version of fullScreenCover ---
+        // This opens automatically whenever 'selectedPhoto' is set to a value.
+        // Swift automatically passes the photo object into the closure.
+        .fullScreenCover(item: $selectedPhoto) { photo in
+            if let uiImage = UIImage(data: photo.data) {
+                FullScreenImageView(image: uiImage)
+            } else {
+                Text("Error loading image")
+            }
+        }
     }
     
     // MARK: - Logic Functions
@@ -144,15 +168,10 @@ struct MiniatureDetailView: View {
     }
 }
 
-#Preview {
-    NavigationStack {
-        MiniatureDetailView(miniature: Miniature(name: "Clone Trooper", faction: "Republic"))
-    }
-}
-
 // MARK: - Preview
 #Preview {
     // This creates a sample miniature just for the preview
+    // Note: This preview might need updating to add dummy photos if you want to test the gallery
     let sampleMini = Miniature(name: "Primaris Intercessor",
                                faction: "Space Marines",
                                status: .wip)
