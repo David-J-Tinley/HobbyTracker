@@ -236,7 +236,7 @@ struct MiniatureGridItem: View {
     var body: some View {
         VStack {
             // Large Photo
-            if let photoData = miniature.photo,
+            if let photoData = miniature.coverImage,
                let uiImage = UIImage(data: photoData) {
                 Image(uiImage: uiImage)
                     .resizable()
@@ -278,7 +278,7 @@ struct MiniatureRow: View {
     var body: some View {
         HStack(spacing: 15) {
             // Photo
-            if let photoData = miniature.photo,
+            if let photoData = miniature.coverImage,
                let uiImage = UIImage(data: photoData) {
                 Image(uiImage: uiImage)
                     .resizable()

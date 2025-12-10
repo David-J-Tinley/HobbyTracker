@@ -22,18 +22,21 @@ final class Miniature {
     var faction: String
     var status: Status // Uses the custom enum below
     var dateAdded: Date
-    
-    /**
-     * @Attribute(.externalStorage) tells SwiftData to store this
-     * data in a separate file, not directly in the database.
-     * This is best practice for large data like images.
-     */
-    @Attribute(.externalStorage) var photo: Data?
-    
     // We provide default values ("") so SwiftData can auto-migrate existing data
     var recipe: String = ""
     var notes: String = ""
     
+    // --- CHANGED: Replaced single 'photo' with a list ---
+    // .cascade means "If I delete the miniature, delete all its photos too"
+    @Relationship(deleteRule: .cascade, inverse: \MiniaturePhoto.miniature)
+    var photos: [MiniaturePhoto] = []
+    
+    // Helper: Get the most recent photo for the thumbnail
+    var coverImage: Data? {
+        // Sort by date so the newest progress pic is the cover
+        return photos.sorted { $0.dateTaken < $1.dateTaken }.last?.data
+    }
+
     // The initializer (the "constructor") for creating a new miniature
     init(name: String, faction: String, status: Status = .unbuilt) {
         self.id = UUID()
@@ -41,25 +44,20 @@ final class Miniature {
         self.faction = faction
         self.status = status
         self.dateAdded = Date()
-        self.photo = nil // Default to no photo
+        // Photos starts empty
     }
     
     // MARK: - Clone Function
     func clone() -> Miniature {
-        // 1. Initialize with the same basic properties
-        let newMini = Miniature(
-            name: self.name,
-            faction: self.faction,
-            status: self.status
-        )
-        
-        // 2. Copy the optional/complex data
-        newMini.photo = self.photo
+        let newMini = Miniature(name: self.name, faction: self.faction, status: self.status)
         newMini.recipe = self.recipe
         newMini.notes = self.notes
         
-        // Note: We intentionally do NOT copy 'id' or 'dateAdded'
-        // because this is a new, unique entry.
+        // Copy each photo
+        for oldPhoto in self.photos {
+            let newPhoto = MiniaturePhoto(data: oldPhoto.data, dateTaken: oldPhoto.dateTaken)
+            newMini.photos.append(newPhoto)
+        }
         
         return newMini
     }

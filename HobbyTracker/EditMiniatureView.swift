@@ -60,7 +60,7 @@ struct EditMiniatureView: View {
                     }
 
                     // Show a preview of the *new* or *existing* photo
-                    if let photoData = selectedPhotoData ?? miniature.photo,
+                    if let photoData = selectedPhotoData ?? miniature.coverImage,
                        let uiImage = UIImage(data: photoData) {
                         Image(uiImage: uiImage)
                             .resizable()
@@ -90,7 +90,11 @@ struct EditMiniatureView: View {
                     Button("Done") {
                         // If a new photo was selected, update the miniature
                         if let selectedPhotoData {
-                            miniature.photo = selectedPhotoData
+                            // 1. Create a new photo object
+                            let newProgressPic = MiniaturePhoto(data: selectedPhotoData)
+                            
+                            // 2. Add it to the miniature's list
+                            miniature.photos.append(newProgressPic)
                         }
                         dismiss() // Just close the sheet
                     }

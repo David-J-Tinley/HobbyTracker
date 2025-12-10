@@ -26,6 +26,7 @@ struct HobbyTrackerTests {
         }
     }
 
+    // MARK: - Test Mini Initialization
     @Test func testMiniatureInitialization() {
         // Test that your model's initializer works as expected
         let mini = Miniature(name: "Test Marine", faction: "Ultramarines", status: .built)
@@ -33,15 +34,17 @@ struct HobbyTrackerTests {
         #expect(mini.name == "Test Marine")
         #expect(mini.faction == "Ultramarines")
         #expect(mini.status == .built)
-        #expect(mini.photo == nil) // Default photo should be nil
+        #expect(mini.photos.isEmpty) // Default photo should be nil
     }
     
+    // MARK: - Test Status Display Name
     @Test func testStatusDisplayName() {
         // Test the computed property in your Status enum
         #expect(Status.wip.displayName == "Work in Progress")
         #expect(Status.unbuilt.displayName == "Unbuilt")
     }
 
+    // MARK: - Test Swift Data Create & Read
     @MainActor
     @Test func testSwiftDataCreateAndRead() async throws {
         // Get the main context from your test container
@@ -61,6 +64,7 @@ struct HobbyTrackerTests {
         #expect(miniatures.first?.name == "Librarian")
     }
     
+    // MARK: - Test Swift Data Delete
     @MainActor
     @Test func testSwiftDataDelete() async throws {
         let context = testContainer.mainContext
@@ -81,6 +85,7 @@ struct HobbyTrackerTests {
         #expect(miniatures.isEmpty)
     }
     
+    // MARK: - Test Swift Data Update
     @MainActor
     @Test func testSwiftDataUpdate() async throws {
         let context = testContainer.mainContext
@@ -107,6 +112,7 @@ struct HobbyTrackerTests {
         #expect(miniatures.first?.status == .wip)
     }
     
+    // MARK: - Test Backlog & Gallery Filtering
     @MainActor
         @Test func testBacklogAndGalleryFiltering() async throws {
             let context = testContainer.mainContext
@@ -141,6 +147,7 @@ struct HobbyTrackerTests {
             #expect(gallery.first?.name == "General")
         }
     
+    // MARK: - Test Recipe & Notes Persistence
     @MainActor
         @Test func testRecipeAndNotesPersistence() async throws {
             // 1. Create a mini (uses the new default "" values)
@@ -166,6 +173,7 @@ struct HobbyTrackerTests {
             #expect(fetchedMini.notes == "Used a 32mm base instead of 40mm.")
         }
     
+    // MARK: - Test Calculations
     @MainActor
         @Test func testStatsCalculations() async throws {
             let context = testContainer.mainContext
@@ -209,6 +217,7 @@ struct HobbyTrackerTests {
             #expect(factionCounts.contains(1)) // Necrons
         }
     
+    // MARK: - Test Search and Sort Logic
     @MainActor
         @Test func testSearchAndSortLogic() async throws {
             // 1. Setup: Create items with distinct names and dates
@@ -248,35 +257,60 @@ struct HobbyTrackerTests {
             #expect(newestSorted.last?.name == "Alpha Squad")
         }
     
+    // MARK: - Test Mini Cloning w/ Gallery
     @MainActor
-        @Test func testMiniatureCloning() async throws {
-            // 1. Setup: Create a "Master" miniature with ALL fields filled
-            let master = Miniature(name: "Clone Sergeant", faction: "Republic", status: .built)
+        @Test func testMiniatureCloningWithGallery() async throws {
+            // 1. Setup Master
+            let master = Miniature(name: "Clone Master", faction: "Republic")
             
-            // Add complex data
-            master.recipe = "Armor: White, Visor: Black"
-            master.notes = "Do not forget the rank markings."
+            // Add a photo to the master
+            let sampleData = Data([0xAA, 0xBB])
+            let photo = MiniaturePhoto(data: sampleData)
+            master.photos.append(photo)
             
-            // Simulate a photo (using some raw data bytes)
-            let dummyPhotoData = Data([0x00, 0x01, 0x02, 0x03])
-            master.photo = dummyPhotoData
-            
-            // 2. Perform the Clone
+            // 2. Perform Clone
             let clone = master.clone()
             
-            // 3. Verify Equality (The "Copy" worked)
+            // 3. Verify Basic Info
             #expect(clone.name == master.name)
-            #expect(clone.faction == master.faction)
-            #expect(clone.status == master.status)
-            #expect(clone.recipe == master.recipe)
-            #expect(clone.notes == master.notes)
-            #expect(clone.photo == master.photo)
             
-            // 4. Verify Identity (It is a NEW object)
-            #expect(clone.id != master.id) // IDs must be different
+            // 4. Verify Gallery Cloning
+            // The clone should have 1 photo
+            #expect(clone.photos.count == 1)
             
-            // Dates should be very close, but technically different objects
-            // (We just check that the clone has a date)
-            #expect(clone.dateAdded != Date.distantPast)
+            // The data should be the same
+            #expect(clone.photos.first?.data == sampleData)
+            
+            // BUT the Photo ID should be different (it's a deep copy, not the same object)
+            #expect(clone.photos.first?.id != master.photos.first?.id)
+        }
+    
+    // MARK: - Test Photo Gallery Logic
+    @MainActor
+        @Test func testPhotoGalleryLogic() async throws {
+            let context = testContainer.mainContext
+            let mini = Miniature(name: "Gallery Test", faction: "Test")
+            
+            // 1. Create two pieces of dummy image data
+            let oldData = Data([0x01]) // Pretend this is an old photo
+            let newData = Data([0x02]) // Pretend this is a new photo
+            
+            // 2. Create Photo objects with different dates
+            let oldPhoto = MiniaturePhoto(data: oldData, dateTaken: Date.distantPast)
+            let newPhoto = MiniaturePhoto(data: newData, dateTaken: Date.now)
+            
+            // 3. Add them to the miniature (Order shouldn't matter for the logic, but we append)
+            mini.photos.append(oldPhoto)
+            mini.photos.append(newPhoto)
+            
+            context.insert(mini)
+            
+            // 4. Verify Count
+            #expect(mini.photos.count == 2)
+            
+            // 5. Verify Cover Image Logic
+            // The app should pick the photo with the latest date (newData)
+            #expect(mini.coverImage == newData)
+            #expect(mini.coverImage != oldData)
         }
 }
