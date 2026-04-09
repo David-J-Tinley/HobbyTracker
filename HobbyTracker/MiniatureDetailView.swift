@@ -14,11 +14,14 @@ struct MiniatureDetailView: View {
     @Environment(\.dismiss) private var dismiss
     
     let miniature: Miniature
+    
     @State private var isShowingEditSheet = false
     
-    // --- CHANGED: Track the specific photo object instead of just a boolean ---
+    // Track the specific photo object instead of just a boolean.
     // This allows us to know exactly WHICH photo was tapped in the gallery.
     @State private var selectedPhoto: MiniaturePhoto?
+    
+    @State private var showConfetti = false
 
     var body: some View {
         List {
@@ -131,10 +134,24 @@ struct MiniatureDetailView: View {
                 .accessibilityIdentifier("actionsMenu")
             }
         }
+        .onChange(of: miniature.status) { oldValue, newValue in
+            if newValue == .complete {
+                // 1. Play Success Haptic
+                Haptics.shared.notify(.success)
+
+                // 2. Trigger Confetti
+                showConfetti = true
+
+                // 3. Turn off confetti after 3 seconds
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                    showConfetti = false
+                }
+            }
+        }
         .sheet(isPresented: $isShowingEditSheet) {
             EditMiniatureView(miniature: miniature)
         }
-        // --- CHANGED: Use the 'item' version of fullScreenCover ---
+        // Use the 'item' version of fullScreenCover
         // This opens automatically whenever 'selectedPhoto' is set to a value.
         // Swift automatically passes the photo object into the closure.
         .fullScreenCover(item: $selectedPhoto) { photo in
@@ -142,6 +159,12 @@ struct MiniatureDetailView: View {
                 FullScreenImageView(image: uiImage)
             } else {
                 Text("Error loading image")
+            }
+        }
+        .overlay {
+            if showConfetti {
+                ConfettiView()
+                    .allowsHitTesting(false) // Let user click through the confetti
             }
         }
     }

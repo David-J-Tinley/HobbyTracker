@@ -30,6 +30,12 @@ struct ContentView: View {
                 .tabItem {
                     Label("Gallery", systemImage: "trophy.fill")
                 }
+            
+            // Tab 3: Settings (NEW)
+            SettingsView()
+                .tabItem {
+                    Label("Settings", systemImage: "gear")
+                }
         }
     }
 }
@@ -128,6 +134,9 @@ struct BacklogView: View {
     }
     
     private func deleteMiniatures(at offsets: IndexSet) {
+        // Play a rigid tap (feels like a mechanical click)
+        Haptics.shared.play(.rigid)
+
         for index in offsets {
             modelContext.delete(backlogMiniatures[index])
         }
