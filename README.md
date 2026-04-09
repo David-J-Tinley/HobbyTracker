@@ -2,11 +2,11 @@
 
 HobbyTracker is a comprehensive iOS application designed for miniature painters and wargamers to track their collection, manage painting projects, and view their progress. Built with **SwiftUI** and **SwiftData**, it serves as a modern digital backlog and gallery for hobbyists.
 
-## 📱 Screenshots
+## Screenshots
 
 *(Optional: You can add screenshots here later)*
 
-## 🛠 Tech Stack
+## Tech Stack
 
 * **Language:** Swift 5.0+
 * **UI Framework:** SwiftUI
@@ -15,7 +15,7 @@ HobbyTracker is a comprehensive iOS application designed for miniature painters 
 * **Camera & Gestures:** UIKit Integration (`UIViewControllerRepresentable`, `UIViewRepresentable`)
 * **Minimum Target:** iOS 17.0+
 
-## ✨ Features
+## Features
 
 ### Core Management
 * **Backlog System:** Automatically separates "Work in Progress" models from "Completed" ones into two distinct tabs.
@@ -44,7 +44,7 @@ HobbyTracker is a comprehensive iOS application designed for miniature painters 
 * **Full-Screen Inspector:** A tap-to-zoom image viewer in the Detail screen allowing users to pinch and pan to inspect fine painting details.
 * **Photo Library Integration:** Option to upload existing photos from the iOS Photo Library.
 
-## 🚀 How to Run
+## How to Run
 
 1.  **Requirements:** Xcode 15+ and an iPhone running iOS 17+.
 2.  **Permissions:** The app requires Camera permissions to function fully.
@@ -55,17 +55,17 @@ HobbyTracker is a comprehensive iOS application designed for miniature painters 
     * Select your physical iPhone as the run destination.
     * Build and Run (Cmd+R).
 
-## 🧪 Testing
+## Testing
 
 The project includes a robust suite of **Unit** and **UI Tests** to ensure stability:
 * **Unit Tests:** Verify data persistence, cloning logic, statistic calculations, and filtering algorithms.
 * **UI Tests:** Verify user flows for adding models, searching/sorting, moving items to the gallery, and camera interaction.
 
-## 🗺 Roadmap (Future Features)
+## Roadmap
 
-* [ ] **Haptic Feedback:** Add tactile feedback for completing tasks and saving entries.
-* [ ] **Visual Polish:** Add confetti animations when a model is marked as "Complete".
-* [ ] **Data Export:** Add JSON export functionality for data backup.
+* [X] **Haptic Feedback:** Add tactile feedback for completing tasks and saving entries.
+* [X] **Visual Polish:** Add confetti animations when a model is marked as "Complete".
+* [X] **Data Export:** Add JSON export functionality for data backup.
 * [ ] **iCloud Sync:** Sync collection data across multiple devices (iPhone/iPad).
 * [ ] **Project Grouping:** Ability to group individual models into "Squads" or "Armies".
 * [ ] **Wishlist:** A separate tab for tracking models the user wants to buy.
