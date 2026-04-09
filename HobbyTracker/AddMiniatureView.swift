@@ -21,7 +21,6 @@ struct AddMiniatureView: View {
     @State private var recipe: String = ""
     @State private var notes: String = ""
     
-    // --- UPDATED STATE ---
     @State private var selectedPhotoItems: [PhotosPickerItem] = []
     @State private var selectedImagesData: [Data] = [] // We store a list now
     @State private var isShowingCamera = false
@@ -32,7 +31,9 @@ struct AddMiniatureView: View {
             Form {
                 Section("Details") {
                     TextField("Miniature Name", text: $name)
+                        .accessibilityIdentifier("miniatureNameField")
                     TextField("Faction", text: $faction)
+                        .accessibilityIdentifier("Faction")
                 }
                 
                 Section("Painting Status") {
@@ -98,9 +99,11 @@ struct AddMiniatureView: View {
                 
                 Section("Paint Recipe") {
                     TextField("Recipe...", text: $recipe, axis: .vertical).lineLimit(3...6)
+                        .accessibilityIdentifier("recipeField")
                 }
                 Section("Notes") {
                     TextField("Notes...", text: $notes, axis: .vertical).lineLimit(3...6)
+                        .accessibilityIdentifier("notesField")
                 }
             }
             .navigationTitle("Add New Miniature")
@@ -109,6 +112,7 @@ struct AddMiniatureView: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { saveMiniature() }
                     .disabled(name.isEmpty)
+                    .accessibilityIdentifier("saveMiniatureButton")
                 }
             }
             // --- Camera Sheet ---
@@ -150,6 +154,9 @@ struct AddMiniatureView: View {
         }
         
         modelContext.insert(newMini)
+        
+        // Play a heavy "Thud" to confirm save
+        Haptics.shared.play(.heavy)
         dismiss()
     }
 }

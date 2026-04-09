@@ -313,4 +313,40 @@ struct HobbyTrackerTests {
             #expect(mini.coverImage == newData)
             #expect(mini.coverImage != oldData)
         }
+    
+    // MARK: - Test JSON Export Logic
+    @MainActor
+        @Test func testJSONExportLogic() async throws {
+            // 1. Setup: Create a populated miniature
+            let mini = Miniature(name: "Export Tester", faction: "Tau Empire", status: .complete)
+            mini.recipe = "Base: White, Sept: Red"
+            mini.notes = "Do not forget the drone antennas."
+            
+            // 2. Simulate the Export (Convert to DTO)
+            let exportObject = MiniatureExport(from: mini)
+            let backup = BackupFile(exportedDate: Date(), miniatures: [exportObject])
+            
+            // 3. Encode to JSON (Turn it into data)
+            let encoder = JSONEncoder()
+            let jsonData = try encoder.encode(backup)
+            
+            // 4. Verify Data Exists
+            #expect(!jsonData.isEmpty)
+            
+            // 5. Decode back (Simulate restoring or reading the file)
+            let decoder = JSONDecoder()
+            let loadedBackup = try decoder.decode(BackupFile.self, from: jsonData)
+            
+            // 6. Verify Content
+            #expect(loadedBackup.miniatures.count == 1)
+            
+            let loadedMini = loadedBackup.miniatures.first!
+            #expect(loadedMini.name == "Export Tester")
+            #expect(loadedMini.faction == "Tau Empire")
+            #expect(loadedMini.status == "Complete") // Note: It is a String now, not an Enum
+            #expect(loadedMini.recipe == "Base: White, Sept: Red")
+            
+            // Check that the ID matches (Data integrity)
+            #expect(loadedMini.id == mini.id)
+        }
 }
